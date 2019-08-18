@@ -40,7 +40,14 @@ namespace Client
                 client.Output.Write(packet_header);
                 client.Output.Write(payload.Length);
                 client.Output.Write(payload);
-                
+
+                packet_header = 0x35;
+                int payload_size = 3145728;
+                client.Output.Write(packet_header);
+                client.Output.Write(payload_size);
+                byte[] file = new byte[payload_size];
+                new Random().NextBytes(file);
+                client.Output.Write(file);
             }
         }
     }
