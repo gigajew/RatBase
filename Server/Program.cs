@@ -31,7 +31,7 @@ namespace Server
             client.Start();
 
             // add client to list
-            lock (clients )
+            lock (clients)
             {
                 clients.Add(client);
             }
@@ -42,11 +42,11 @@ namespace Server
             Console.WriteLine("Connected: {0}, Reason: {1}", connected, reason);
 
             // remove client from list
-            if(!connected )
+            if (!connected)
             {
-                lock(clients )
+                lock (clients)
                 {
-                    if(clients.Contains(sender))
+                    if (clients.Contains(sender))
                     {
                         clients.Remove(sender);
                     }
@@ -54,26 +54,48 @@ namespace Server
             }
         }
 
+        private static void ReadFile(RatClient sender)
+        {
+            byte[] buffer = new byte[8192];
+            int r = 0;
+            int tot = 0;
+
+            string full_filename = sender.Input.ReadString();
+            string filename = Path.GetFileName(full_filename);
+            long file_size = sender.Input.ReadInt64();
+
+            using (FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.ReadWrite, FileShare.Read ))
+            {
+                while ((r = sender.Input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    fs.Write(buffer, 0, r);
+                    tot += r;
+
+                    if (tot == file_size)
+                        break;
+                }
+            }
+
+            Console.WriteLine("Successfully received a file: {0}, Size: {1}kB", filename, (decimal)file_size / 1024m);
+
+        }
+
+        private static void ReadMessage(RatClient sender)
+        {
+           string msg=  sender.Input.ReadString();
+            Console.WriteLine(msg);
+        }
+
         private static void Client_PacketHeaderReceived(RatClient sender, int value)
         {
-            if( value == 0x02)
+            switch (value)
             {
-                // read a packet
-                int message_length = sender.Input.ReadInt32 ();
-                byte[] message_raw = sender.Input.ReadBytes(message_length );
-
-                Console.WriteLine("Client said: {0}", Encoding.UTF8.GetString(message_raw));
-            } else if (value == 0x35)
-            {
-                int length = sender.Input.ReadInt32();
-                using (FileStream stream = new FileStream("output.bin", FileMode.Create, FileAccess.ReadWrite))
-                {
-                    byte[] buffer = sender.Input.ReadBytes(length);
-                    stream.Write(buffer, 0, buffer.Length);
-                    buffer = null;
-                }
-                Console.WriteLine("Received a file of size: {0}mB", length / 1024/1024);
-         
+                case 0x58:
+                    ReadMessage(sender);
+                    break;
+                case 0x48:
+                    ReadFile(sender);
+                    break;
             }
         }
     }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,28 @@ namespace Client
             Console.In.Read();
         }
 
+        private static  void SendFile(string filename )
+        {
+            byte[] buffer = new byte[8192];
+            int r = 0;
+
+            client.Output.Write((byte)0x48);
+            client.Output.Write(filename);
+            using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read , FileShare.Read))
+            {
+                client.Output.Write(fs.Length);
+                while (( r= fs.Read(buffer, 0, buffer.Length )) > 0)
+                {
+                    client.Output.Write(buffer, 0, r);
+                }
+            }
+        }
+        private static void SendMessage(string message)
+        {
+            client.Output.Write((byte)0x58);
+            client.Output.Write(message);
+        }
+
         private static void Client_PacketHeaderReceived(RatClient  sender, int value)
         {
             Console.WriteLine("CLIENT: Received packet: " + value.ToString("x2"));
@@ -34,20 +57,9 @@ namespace Client
                 // initializes the client, must happen after a successful connect
                 sender.Start();
 
-                // send a packet
-                byte packet_header = 0x02;
-                byte[] payload = Encoding.UTF8.GetBytes("Hello there, server");
-                client.Output.Write(packet_header);
-                client.Output.Write(payload.Length);
-                client.Output.Write(payload);
-
-                packet_header = 0x35;
-                int payload_size = 3145728;
-                client.Output.Write(packet_header);
-                client.Output.Write(payload_size);
-                byte[] file = new byte[payload_size];
-                new Random().NextBytes(file);
-                client.Output.Write(file);
+                // send a couple of packets
+                SendMessage("Hello there, I'm sending you a file now");
+                SendFile("C:\\Windows\\system32\\calc.exe");
             }
         }
     }
