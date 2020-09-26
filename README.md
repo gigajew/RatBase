@@ -1,3 +1,3 @@
 # RatBase
 
-Donations: bitcoin:1GBrDhCtd6xXxbJ6FKFknag9g3GVAUisc6
+Donations: bitcoin:12FP1JisjYCsgfteTLMQQMLnVBs65wZD8G
